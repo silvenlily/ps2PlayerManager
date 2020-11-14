@@ -1,5 +1,5 @@
-ps2 role sync is a discord bot used to aid in the administration of planetside 2 outfits who use discord to manage their players.
-Coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://github.com/silvenlily/) but useable by anyone.
+ps2PlayerManager is a discord bot used to aid in the administration of planetside 2 outfits who use discord to manage their players.  
+Created for for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://github.com/silvenlily/) but useable by anyone.
 
 Features:  
 automaticly detects when a discord users nickname doesn't match with a ingame name in the outfit and applies a role as specified in the config. (*ING Doesn't Match* for example)  
