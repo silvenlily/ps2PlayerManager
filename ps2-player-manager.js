@@ -3,6 +3,7 @@ var playerCashe = {};
 var allowRequest = Date.now() + 5000;
 var guild = {};
 
+var exemptMembers = configHandler.fetchExempt();
 const config = configHandler.fetchConfig();
 const tokens = configHandler.fetchTokens();
 if (!config.casheTime) {
@@ -42,8 +43,14 @@ bot.on("guildMemberUpdate", async function (guild, member) {
 });
 
 bot.on("ready", () => {
+  let guild = bot.guilds.find((g) => {
+    if (g.id === config.dGuild) {
+      return true;
+    }
+  });
+  guild.fetchAllMembers();
   console.log("Ready!");
-  setTimeout(fixChanges, 2000);
+  setTimeout(fixChanges, 10000);
   setInterval(async () => {
     let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character_name`;
     console.log("request: " + request);
@@ -72,7 +79,6 @@ async function fixChanges() {
       return true;
     }
   });
-  await guild.fetchAllMembers();
   let guildMembers = guild.members.filter(async () => {
     return true;
   });
@@ -81,7 +87,7 @@ async function fixChanges() {
   }
 }
 
-bot.on("messageCreate", (msg) => {
+bot.on("messageCreate", async (msg) => {
   if (
     msg.content.substring(0, config.commandChar.length) === config.commandChar
   ) {
@@ -93,9 +99,52 @@ bot.on("messageCreate", (msg) => {
       command = args;
     }
     switch (command) {
-      case "guild":
-        console.log("guild");
-        getPlayerInfo("silverlilys", tokens.api);
+      case "exempt":
+        if (msg.guildID === config.dGuild) {
+          let member = msg.channel.guild.fetchMembers({
+            userIDs: msg.author.id,
+          });
+          member = (await member)[0];
+          if (member.permission.has("administrator")) {
+            if (msg.mentions[0]) {
+              let changes = {
+                exempted: [],
+                unexempted: [],
+              };
+              msg.mentions.forEach((usr) => {
+                if (exemptMembers[usr.id]) {
+                  exemptMembers[usr.id] = false;
+                  changes.exempted.push(usr.mention);
+                } else {
+                  exemptMembers[usr.id] = true;
+                  changes.unexempted.push(usr.mention);
+                }
+              });
+              let reply = "";
+              if (changes.exempted[0]) {
+                reply = "Added exemption to following users:\n";
+                for (let i = 0; i < changes.exempted.length; i++) {
+                  reply = reply + changes.exempted[i] + "\n";
+                }
+              }
+              if (changes.unexempted[0]) {
+                reply = reply + "Removed exemption to following users:\n";
+                for (let i = 0; i < changes.exempted.length; i++) {
+                  reply = reply + changes.exempted[i] + "\n";
+                }
+              }
+              if (reply != "") {
+                bot.createMessage(msg.channel.id, reply);
+                configHandler.updateExempt(exemptMembers);
+              }
+            } else {
+              bot.createMessage(
+                msg.channel.id,
+                "Usage:\n" + config.commandChar + "exempt [@user]"
+              );
+            }
+          }
+        }
         break;
     }
   }
@@ -106,32 +155,40 @@ async function updateGuildMember(member) {
     member.roles.includes(config["member"]) &&
     !member.roles.includes(config["exempt"])
   ) {
-    if (!member.bot) {
-      let playername = member.username;
-      if (member.nick) {
-        playername = member.nick;
-      }
-      console.log(`member update: ` + playername);
-      if (playerCashe[playername]) {
-        if (member.roles.includes(config.unmached)) {
-          member.removeRole(config.unmached);
+    if (!exemptMembers[member.id]) {
+      if (!member.bot) {
+        let playername = member.username;
+        if (member.nick) {
+          playername = member.nick;
         }
-        if (config.matchRanks) {
-          if (!member.roles.includes(config.update)) {
-            if (
-              !member.roles.includes(config["ranks"][playerCashe[playername]])
-            ) {
-              member.addRole(config.update);
-            }
-          } else if (
-            member.roles.includes(config["ranks"][playerCashe[playername]])
-          ) {
-            member.removeRole(config.update);
+        if (playername.includes(" ")) {
+          playername = playername.substring(0, playername.indexOf(" "));
+        }
+        if (playername.includes("[")) {
+          playername = playername.substring(0, playername.indexOf("["));
+        }
+        console.log(`member update: ` + playername);
+        if (playerCashe[playername]) {
+          if (member.roles.includes(config.unmached)) {
+            member.removeRole(config.unmached);
           }
-        }
-      } else {
-        if (!member.roles.includes(config.unmached)) {
-          member.addRole(config.unmached);
+          if (config.matchRanks) {
+            if (!member.roles.includes(config.update)) {
+              if (
+                !member.roles.includes(config["ranks"][playerCashe[playername]])
+              ) {
+                member.addRole(config.update);
+              }
+            } else if (
+              member.roles.includes(config["ranks"][playerCashe[playername]])
+            ) {
+              member.removeRole(config.update);
+            }
+          }
+        } else {
+          if (!member.roles.includes(config.unmached)) {
+            member.addRole(config.unmached);
+          }
         }
       }
     }

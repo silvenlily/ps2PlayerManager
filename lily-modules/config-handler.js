@@ -68,6 +68,39 @@ function fetchTokens() {
   }
 }
 
+function updateExemptMembers(cashe) {
+  let path = "./excemptMemberCashe.json";
+  if (fs.existsSync(path)) {
+    console.log("updating exempt member cashe");
+    let data = JSON.stringify(cashe, null, 2);
+    fs.writeFileSync(path, data);
+  }
+}
+
+function fetchExemptMembers() {
+  let path = "./excemptMemberCashe.json";
+  if (fs.existsSync(path)) {
+    console.log("excempt member cashe found");
+    let tokens = fs.readFileSync(path, "utf8");
+    try {
+      return JSON.parse(tokens);
+    } catch (err) {
+      console.log(
+        "***************************************\n***** invalid json in excempt member cashe file *****\n***************************************"
+      );
+    }
+  } else {
+    console.log(
+      "excempt member cashe file not found, generating new excempt member cashe"
+    );
+    let data = JSON.stringify(defaultTokens, null, 2);
+    fs.writeFileSync(path, data);
+    let tokens = fs.readFileSync(path, "utf8");
+  }
+}
+
+exports.fetchExempt = fetchExemptMembers;
+exports.updateExempt = updateExemptMembers;
 exports.fetchConfig = fetchConfig;
 exports.defaultConfig = defaultConfig;
 exports.fetchTokens = fetchTokens;
