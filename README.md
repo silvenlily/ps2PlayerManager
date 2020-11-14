@@ -1,5 +1,5 @@
 ps2 role sync is a discord bot used to aid in the administration of planetside 2 outfits who use discord to manage their players.
-coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://docs.silverlily.net/)
+coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://github.com/silvenlily/)
 
 original repo: https://github.com/silvenlily/ps2PlayerManager
 
