@@ -15,7 +15,7 @@ getting started: (ubuntu terminal)
 2. move into the directory this created
 3. install the depencenies using "`sudo npm install`"
 4. run the bot using "`node .\ps2-player-manager.js`" the first time you do this the bot will generate config & tokens files for you.
-5. place your tokens into /config/tokens.json & modifiy config values as needed.
+5. place your tokens into the tokens file & populate the config file.
 6. if not using pm2 run the bot using "`node .\ps2-player-manager.js`" if using pm2 (recommended) start the bot using "`pm2 start ps2-player-manager.js --watch`"
 
 recommended:  
