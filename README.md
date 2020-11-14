@@ -22,7 +22,7 @@ dependencys:
 
 **config file**  
 all values not marked as optional are _required._  
-configVersionDontTouch: do. not. change. this.  
+configVersion: do. not. change. this.  
 psGuild: planetside guild id  
 world: _(default: 1 (connery))_ planetside numeric server id  
 dGuild: discord guild id  

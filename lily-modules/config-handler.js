@@ -19,8 +19,6 @@ const defaultConfig = {
   ranks: {},
 };
 
-//maybe at some point make this async? not sure if its worth the time investment given that the code only runs at startup
-
 function fetchConfig() {
   let path = "./config/config.json";
   if (!fs.existsSync("./config")) {
@@ -31,7 +29,9 @@ function fetchConfig() {
     console.log("config file found");
     let config = fs.readFileSync(path, "utf8");
     try {
-      return JSON.parse(config);
+      let configJSON = JSON.parse(config);
+
+      return configJSON;
     } catch (err) {
       console.log(
         "*************************************************\n********** invalid json in config file **********\n************************************************* "
