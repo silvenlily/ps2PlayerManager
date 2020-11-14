@@ -2,8 +2,8 @@ ps2 role sync is a discord bot used to aid in the administration of planetside 2
 coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://github.com/silvenlily/)
 
 Features:  
-automaticly detects when a discord users nicknames dont match with an ingame name in the outfit and applies a role as specified in the config  
-automaticly detects when a discord users roles dont mach with their ps2 rank and applies a role as specified in the config  
+automaticly detects when a discord users nickname doesn't match with a ingame name in the outfit and applies a role as specified in the config.  
+automaticly detects when a discord users roles dont mach with their ps2 rank and applies a role as specified in the config.  
 
 
 original repo: https://github.com/silvenlily/ps2PlayerManager
