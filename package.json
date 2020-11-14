@@ -4,7 +4,7 @@
   "description": "a bot for aiding in the syncing of member roles between discord & planetside 2",
   "main": "main.js",
   "author": "silverlily",
-  "license": "ISC",
+  "license": "modified ISC see README.md)",
   "dependencies": {
     "axios": "^0.21.0",
     "eris": "^0.14.0"
