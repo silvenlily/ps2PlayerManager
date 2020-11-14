@@ -16,6 +16,9 @@ getting started: (ubuntu terminal)
 recommended:  
 Use a proccess manager like [pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) to manage the bot and automatically restart if it crashes.
 
+exempting members:  
+You can use ]exempt <@username> to exempt a player from being checked. All users with the [bot] tag are automaticly excempt.
+
 dependencys:  
 [eris](https://www.npmjs.com/package/eris)  
 [axios](https://www.npmjs.com/package/axios)
