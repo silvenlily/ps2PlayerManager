@@ -1,5 +1,10 @@
-ps2 role sync is a discord bot used to aid in the administration of planetside 2 outfits who use discord to manage their players.
-coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://docs.silverlily.net/)
+ps2PlayerManager is a discord bot used to aid in the administration of planetside 2 outfits who use discord to manage their players.  
+Created for for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](https://github.com/silvenlily/) but useable by anyone.
+
+Features:  
+automaticly detects when a discord users nickname doesn't match with a ingame name in the outfit and applies a role as specified in the config. (*ING Doesn't Match* for example)  
+automaticly detects when a discord users roles dont match with their ps2 rank and applies a role as specified in the config. (*rank update* for example)   
+
 
 original repo: https://github.com/silvenlily/ps2PlayerManager
 
@@ -10,7 +15,7 @@ getting started: (ubuntu terminal)
 2. move into the directory this created
 3. install the depencenies using "`sudo npm install`"
 4. run the bot using "`node .\ps2-player-manager.js`" the first time you do this the bot will generate config & tokens files for you.
-5. place your tokens into /config/tokens.json & modifiy config values as needed.
+5. place your tokens into the tokens file & populate the config file.
 6. if not using pm2 run the bot using "`node .\ps2-player-manager.js`" if using pm2 (recommended) start the bot using "`pm2 start ps2-player-manager.js --watch`"
 
 recommended:  
