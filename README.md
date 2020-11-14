@@ -3,7 +3,7 @@ coded for [No Fear](https://ps2.nofearoutfit.org/) (connery NC) by [silverlily](
 
 Features:  
 automaticly detects when a discord users nickname doesn't match with a ingame name in the outfit and applies a role as specified in the config. (*ING Doesn't Match* for example)  
-automaticly detects when a discord users roles dont mach with their ps2 rank and applies a role as specified in the config. (*rank update* for example)   
+automaticly detects when a discord users roles dont match with their ps2 rank and applies a role as specified in the config. (*rank update* for example)   
 
 
 original repo: https://github.com/silvenlily/ps2PlayerManager
