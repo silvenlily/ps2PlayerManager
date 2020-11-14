@@ -9,16 +9,35 @@ getting started: (ubuntu terminal)
 1. clone the repo using "`sudo git clone https://github.com/silvenlily/ps2PlayerManager`"
 2. move into the directory this created
 3. install the depencenies using "`sudo npm install`"
-4. run the bot using "`node .\ps2-player-manager.js`"
+4. run the bot using "`node .\ps2-player-manager.js`" the first time you do this the bot will generate config & tokens files for you.
+5. place your tokens into /config/tokens.json & modifiy config values as needed.
+6. if not using pm2 run the bot using "`node .\ps2-player-manager.js`" if using pm2 (recommended) start the bot using "`pm2 start ps2-player-manager.js --watch`"
 
 recommended:  
-Use a proccess manager like [pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) to manage the bot and automacily restart if it crashes.
+Use a proccess manager like [pm2](https://pm2.keymetrics.io/docs/usage/quick-start/) to manage the bot and automatically restart if it crashes.
 
 dependencys:  
 [eris](https://www.npmjs.com/package/eris)  
 [axios](https://www.npmjs.com/package/axios)
 
-License (ISC modified)  
+**config file**  
+all values not marked as optional are _required._  
+configVersionDontTouch: do. not. change. this.  
+psGuild: planetside guild id  
+world: _(default: 1 (connery))_ planetside numeric server id  
+dGuild: discord guild id  
+commandChar: prefix for commands  
+member: _(default: "]")_ the role id required to automaticly try and match a discord user to a ps2 player  
+exempt: discord users with this role will be ignored, regardless of if they have the member role  
+unmached: role id to give to players if they have the member, and their discord nick does not match a ps2 player on the given server and guild.  
+matchRanks: _(default: false)_ true/false should the bot give players the update role if their ps2 role & discord role do not match. If false then update & ranks are unused.  
+update: role id used if matchRanks is true
+ranks: ps2 rank names & discord role id pairs,  
+format is {"rank name":"role id", "rank name":"role id", "rank name":"role id"}  
+for example: {"ensign":"1234556789", "liutenent":"1234556789","captian":"1234556789"}  
+use [jsonlint.com](https://jsonlint.com/) to validate your ranks as json can be quite fiddley.
+
+License (modified ISC)  
 Copyright 2020 lily-s
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that both:

@@ -7,18 +7,16 @@ const defaultTokens = {
 };
 const defaultConfig = {
   configVersion: 1,
+  psGuild: "",
+  world: 1,
+  dGuild: "",
   commandChar: "]",
-  dGuild: "discord guild ID",
-  psGuild: "planetside guild id",
-  member: "discord member role id",
-  exempt: "discord excempt role id",
-  update: "discord update ps2 rank role id",
-  unmached: "discord ING does not match role id",
-  ranks: {
-    "ps2 rank name #1 (in lowercase)": "discord role id #1",
-    "ps2 rank name #2 (in lowercase)": "discord role id #2",
-    "ps2 rank name #3 (in lowercase)": "discord role id #3",
-  },
+  member: "",
+  exempt: "",
+  unmached: "",
+  matchRanks: false,
+  update: "unused if matchRanks is false",
+  ranks: {},
 };
 
 //maybe at some point make this async? not sure if its worth the time investment given that the code only runs at startup
@@ -36,16 +34,15 @@ function fetchConfig() {
       return JSON.parse(config);
     } catch (err) {
       console.log(
-        "*************************************************************\n***** invalid json in config file, using default config *****\n*************************************************************"
+        "*************************************************\n********** invalid json in config file **********\n************************************************* "
       );
-      return defaultConfig;
+      process.exit();
     }
   } else {
     console.log("config file not found, generating new config file");
     let data = JSON.stringify(defaultConfig, null, 2);
     fs.writeFileSync(path, data);
-    let config = fs.readFileSync(path, "utf8");
-    return defaultConfig;
+    process.exit();
   }
 }
 
@@ -58,16 +55,16 @@ function fetchTokens() {
       return JSON.parse(tokens);
     } catch (err) {
       console.log(
-        "*************************************************************\n***** invalid json in tokens file, using default config *****\n*************************************************************"
+        "***************************************\n***** invalid json in tokens file *****\n***************************************"
       );
-      return defaultTokens;
+      process.exit();
     }
   } else {
     console.log("tokens file not found, generating new tokens file");
     let data = JSON.stringify(defaultTokens, null, 2);
     fs.writeFileSync(path, data);
     let tokens = fs.readFileSync(path, "utf8");
-    throw "Insert discord token into tokens config file";
+    process.exit();
   }
 }
 
