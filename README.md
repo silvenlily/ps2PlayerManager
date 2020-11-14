@@ -32,9 +32,9 @@ exempt: discord users with this role will be ignored, regardless of if they have
 unmached: role id to give to players if they have the member, and their discord nick does not match a ps2 player on the given server and guild.  
 matchRanks: _(default: false)_ true/false should the bot give players the update role if their ps2 role & discord role do not match. If false then update & ranks are unused.  
 update: role id used if matchRanks is true
-ranks: ps2 rank names & discord role id pairs,  
+ranks: ps2 rank names & discord role id pairs, , first letter must be capitalized and all other letters must be lowercase  
 format is {"rank name":"role id", "rank name":"role id", "rank name":"role id"}  
-for example: {"ensign":"1234556789", "liutenent":"1234556789","captian":"1234556789"}  
+for example: {"Ensign":"1234556789", "Liutenent":"1234556789","Captian":"1234556789"}  
 use [jsonlint.com](https://jsonlint.com/) to validate your ranks as json can be quite fiddley.
 
 License (modified ISC)  
