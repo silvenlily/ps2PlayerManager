@@ -186,6 +186,9 @@ async function updateGuildMember(member) {
             }
           }
         } else {
+          if (member.roles.includes(config.update)) {
+            member.removeRole(config.update);
+          }
           if (!member.roles.includes(config.unmached)) {
             member.addRole(config.unmached);
           }
