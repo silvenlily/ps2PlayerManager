@@ -48,6 +48,38 @@ bot.on("ready", () => {
       return true;
     }
   });
+
+  if (
+    config["reminder"] &&
+    config["reminderTime"] &&
+    config["reminderChannel"] &&
+    typeof config["reminder"] != "disabled"
+  ) {
+    let currentDate = new Date();
+    let hours = currentDate.getHours() * 3600000;
+    let minutes = currentDate.getMinutes() * 60000;
+    let reminder = hours + minutes;
+    reminder = 86400000 - reminder;
+    if (config["reminderTime" === "daily"]) {
+      setTimeout(() => {
+        bot.createMessage(config["reminderChannel"], config["reminder"]);
+        setInterval(() => {
+          bot.createMessage(config["reminderChannel"], config["reminder"]);
+        }, 86400000);
+      }, reminder);
+    } else if (config["reminderTime" === "weekly"]) {
+      let day = currentDate.getDay();
+      day = 8 - day;
+      day = day * 86400000;
+      setTimeout(() => {
+        bot.createMessage(config["reminderChannel"], config["reminder"]);
+        setInterval(() => {
+          bot.createMessage(config["reminderChannel"], config["reminder"]);
+        }, 604800000);
+      }, reminder);
+    }
+  }
+
   guild.fetchAllMembers();
   console.log("Ready!");
   setTimeout(fixChanges, 10000);
@@ -178,7 +210,9 @@ async function updateGuildMember(member) {
           playername = playername.substring(0, playername.indexOf("["));
         }
         if (playerCashe[playername]) {
+          //if player is included in the guild list
           if (member.roles.includes(config.unmached)) {
+            //if player has the unmached role, remove it
             member.removeRole(config.unmached);
             console.log("removed umached IGN role from " + playername);
           }

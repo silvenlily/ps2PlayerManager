@@ -5,8 +5,9 @@ const defaultTokens = {
   discord: "place your discord bot token here.",
   api: "example",
 };
+
 const defaultConfig = {
-  configVersion: 1,
+  configVersion: 2,
   psGuild: "",
   world: 1,
   dGuild: "",
@@ -15,9 +16,38 @@ const defaultConfig = {
   exempt: "",
   unmached: "",
   matchRanks: false,
+  reminder:
+    "Hey! %1 \nMake your ign maches your ingame username! \nThe bot only checks before the first space in your username so you may include tags after that.",
+  reminderTime: "off",
+  reminderChannel: "778126610364366889",
   update: "unused if matchRanks is false",
   ranks: {},
 };
+
+function updateConfig(def, current, path) {
+  let newConfig = current;
+  let defItems = Object.keys(def);
+  let currentItems = Object.keys(current);
+  for (let i = 0; i < defItems.length; i++) {
+    if (!currentItems.includes(defItems[i])) {
+      newConfig[defItems[i]] = def[defItems[i]];
+    }
+  }
+  try {
+    let data = JSON.stringify(newConfig, null, 2);
+    fs.writeFileSync(path, data);
+  } catch (error) {
+    let data = JSON.stringify(newConfig, null, 2);
+    console.log(
+      `Unable to write to config file. Your new config is:\n~~~~~~~~\n \n` +
+        data +
+        `\n \n ~~~~~~~~`
+    );
+  }
+  console.log(
+    "Updated to new config version, please apply new required values."
+  );
+}
 
 function fetchConfig() {
   let path = "./config/config.json";
@@ -30,7 +60,16 @@ function fetchConfig() {
     let config = fs.readFileSync(path, "utf8");
     try {
       let configJSON = JSON.parse(config);
-
+      if (!configJSON.configVersion) {
+        console.log(
+          "I cant determine what config version you have. Please fix or regenerate your config."
+        );
+        process.exit();
+      } else if (configJSON.configVersion < defaultConfig.configVersion) {
+        console.log("Updating config");
+        updateConfig(defaultConfig, configJSON, path);
+        process.exit();
+      }
       return configJSON;
     } catch (err) {
       console.log(
