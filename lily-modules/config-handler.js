@@ -78,7 +78,7 @@ function updateExemptMembers(cashe) {
 }
 
 function fetchExemptMembers() {
-  let path = "./excemptMemberCashe.json";
+  let path = "./config/excemptMemberCashe.json";
   if (fs.existsSync(path)) {
     console.log("excempt member cashe found");
     let tokens = fs.readFileSync(path, "utf8");
