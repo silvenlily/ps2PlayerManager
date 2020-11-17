@@ -1,5 +1,7 @@
 /config/tokens.json
 /config/config.json
+/config/excemptMemberCashe.json
 /docs & notes/
 /node_modules/
+/excemptMemberCashe.json
 excemptMemberCashe.json

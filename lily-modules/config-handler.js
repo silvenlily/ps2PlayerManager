@@ -93,7 +93,7 @@ function fetchExemptMembers() {
     console.log(
       "excempt member cashe file not found, generating new excempt member cashe"
     );
-    let data = JSON.stringify(defaultTokens, null, 2);
+    let data = JSON.stringify({}, null, 2);
     fs.writeFileSync(path, data);
     let tokens = fs.readFileSync(path, "utf8");
   }
