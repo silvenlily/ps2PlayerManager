@@ -7,7 +7,7 @@ const defaultTokens = {
 };
 
 const defaultConfig = {
-  configVersion: 2,
+  configVersion: 3,
   psGuild: "",
   world: 1,
   dGuild: "",
@@ -22,6 +22,7 @@ const defaultConfig = {
   reminderChannel: "",
   update: "unused if matchRanks is false",
   ranks: {},
+  consoleLevel: 5,
 };
 
 function updateConfig(def, current, path) {
@@ -33,6 +34,7 @@ function updateConfig(def, current, path) {
       newConfig[defItems[i]] = def[defItems[i]];
     }
   }
+  newConfig.configVersion = defaultConfig.configVersion;
   try {
     let data = JSON.stringify(newConfig, null, 2);
     fs.writeFileSync(path, data);
@@ -45,7 +47,7 @@ function updateConfig(def, current, path) {
     );
   }
   console.log(
-    "Updated to new config version, please apply new required values."
+    "Updated to new config version, please apply new required values if nessasary."
   );
 }
 

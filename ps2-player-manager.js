@@ -15,6 +15,12 @@ const axios = require("axios").default;
 
 var bot = new Eris(tokens.discord);
 
+async function log(level, msg) {
+  if (config.consoleLevel >= level) {
+    console.log(msg);
+  }
+}
+
 getPlayerCashe();
 async function getPlayerCashe() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character_name`;
@@ -53,7 +59,7 @@ bot.on("ready", () => {
     config["reminder"] &&
     config["reminderTime"] &&
     config["reminderChannel"] &&
-    typeof config["reminder"] != "disabled"
+    typeof config["reminder"] != "off"
   ) {
     let currentDate = new Date();
     let hours = currentDate.getHours() * 3600000;
@@ -105,7 +111,6 @@ bot.on("ready", () => {
 });
 
 async function fixChanges() {
-  console.log("checking player list");
   let guild = bot.guilds.find((g) => {
     if (g.id === config.dGuild) {
       return true;
@@ -114,9 +119,10 @@ async function fixChanges() {
   let guildMembers = guild.members.filter(async () => {
     return true;
   });
-  console.log("Checking " + guildMembers.length + " guild members");
+  log(5, "Checking " + guildMembers.length + " guild members");
   for (let i = 0; i < guildMembers.length; i++) {
-    console.log(
+    log(
+      7,
       "[" +
         (i + 1) +
         "/" +
@@ -126,6 +132,7 @@ async function fixChanges() {
     );
     updateGuildMember(guildMembers[i]);
   }
+  log(5, "Finished checking guild members.");
 }
 
 bot.on("messageCreate", async (msg) => {
@@ -214,7 +221,7 @@ async function updateGuildMember(member) {
           if (member.roles.includes(config.unmached)) {
             //if player has the unmached role, remove it
             member.removeRole(config.unmached);
-            console.log("removed umached IGN role from " + playername);
+            log(4, "removed umached IGN role from " + playername);
           }
           if (config.matchRanks) {
             if (!member.roles.includes(config.update)) {
@@ -222,23 +229,23 @@ async function updateGuildMember(member) {
                 !member.roles.includes(config["ranks"][playerCashe[playername]])
               ) {
                 member.addRole(config.update);
-                console.log("added umached IGN role to " + playername);
+                log(4, "added umached IGN role from " + playername);
               }
             } else if (
               member.roles.includes(config["ranks"][playerCashe[playername]])
             ) {
               member.removeRole(config.update);
-              console.log("removed update rank role from " + playername);
+              log(4, "removed update rank role from " + playername);
             }
           }
         } else {
           if (member.roles.includes(config.update)) {
             member.removeRole(config.update);
-            console.log("removed update rank role from " + playername);
+            log(4, "removed update rank role from " + playername);
           }
           if (!member.roles.includes(config.unmached)) {
             member.addRole(config.unmached);
-            console.log("added umached IGN role to " + playername);
+            log(4, "added umached IGN role to " + playername);
           }
         }
       }
