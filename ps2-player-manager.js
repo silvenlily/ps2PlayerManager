@@ -82,7 +82,11 @@ async function fixChanges() {
   let guildMembers = guild.members.filter(async () => {
     return true;
   });
+  console.log("Checking " + guildMembers.length + " guild members");
   for (let i = 0; i < guildMembers.length; i++) {
+    console.log(
+      "checking " + guildMembers[i] + i + " out of " + guildMembers.length
+    );
     updateGuildMember(guildMembers[i]);
   }
 }
@@ -167,10 +171,10 @@ async function updateGuildMember(member) {
         if (playername.includes("[")) {
           playername = playername.substring(0, playername.indexOf("["));
         }
-        console.log(`member update: ` + playername);
         if (playerCashe[playername]) {
           if (member.roles.includes(config.unmached)) {
             member.removeRole(config.unmached);
+            console.log("removed umached IGN role to playername");
           }
           if (config.matchRanks) {
             if (!member.roles.includes(config.update)) {
@@ -178,19 +182,23 @@ async function updateGuildMember(member) {
                 !member.roles.includes(config["ranks"][playerCashe[playername]])
               ) {
                 member.addRole(config.update);
+                console.log("added umached IGN role to playername");
               }
             } else if (
               member.roles.includes(config["ranks"][playerCashe[playername]])
             ) {
               member.removeRole(config.update);
+              console.log("removed update rank role to playername");
             }
           }
         } else {
           if (member.roles.includes(config.update)) {
             member.removeRole(config.update);
+            console.log("removed update rank role to playername");
           }
           if (!member.roles.includes(config.unmached)) {
             member.addRole(config.unmached);
+            console.log("added umached IGN role to playername");
           }
         }
       }
