@@ -19,7 +19,7 @@ const defaultConfig = {
   reminder:
     "Hey! %1 \nMake your ign maches your ingame username! \nThe bot only checks before the first space in your username so you may include tags after that.",
   reminderTime: "off",
-  reminderChannel: "778126610364366889",
+  reminderChannel: "",
   update: "unused if matchRanks is false",
   ranks: {},
 };
