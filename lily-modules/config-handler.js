@@ -17,7 +17,7 @@ const defaultConfig = {
   unmached: "",
   matchRanks: false,
   reminder:
-    "Hey! %1 \nMake your ign maches your ingame username! \nThe bot only checks before the first space in your username so you may include tags after that.",
+    "Hey! %role% \nMake your ign match your ingame username! \nThe bot only checks before the first space in your username so you may include tags after that.",
   reminderTime: "off",
   reminderChannel: "",
   update: "unused if matchRanks is false",

@@ -80,7 +80,21 @@ bot.on("ready", () => {
       setTimeout(() => {
         bot.createMessage(config["reminderChannel"], config["reminder"]);
         setInterval(() => {
-          bot.createMessage(config["reminderChannel"], config["reminder"]);
+          let guild = bot.guilds.find((g) => {
+            if (g.id === config.dGuild) {
+              return true;
+            }
+          });
+          let role = guild.roles.find((r) => {
+            if (r.id === config.reminderChannel) {
+              return true;
+            }
+          });
+          let rmsg = config["reminder"];
+          if (role) {
+            rmsg = rmsg.replaceAll("%role%", role.mention);
+          }
+          bot.createMessage(config["reminderChannel"], rmsg);
         }, 604800000);
       }, reminder);
     }
