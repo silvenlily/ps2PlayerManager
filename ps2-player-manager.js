@@ -85,11 +85,12 @@ async function fixChanges() {
   console.log("Checking " + guildMembers.length + " guild members");
   for (let i = 0; i < guildMembers.length; i++) {
     console.log(
-      "checking " +
-        guildMembers[i]["username"] +
+      "[" +
         (i + 1) +
-        " out of " +
-        guildMembers.length
+        "/" +
+        guildMembers.length +
+        "] checking: " +
+        guildMembers[i]["username"]
     );
     updateGuildMember(guildMembers[i]);
   }
