@@ -1,7 +1,6 @@
 let configHandler = require("./lily-modules/config-handler.js");
 var playerCashe = {};
-var allowRequest = Date.now() + 5000;
-var guild = {};
+var numMissmached = { names: 0, ranks: 0 };
 
 var exemptMembers = configHandler.fetchExempt();
 const config = configHandler.fetchConfig();
@@ -21,7 +20,6 @@ async function log(level, msg) {
   }
 }
 
-getPlayerCashe();
 async function getPlayerCashe() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character_name`;
   console.log("request: " + request);
@@ -102,25 +100,11 @@ bot.on("ready", () => {
 
   guild.fetchAllMembers();
   console.log("Ready!");
+  getPlayerCashe();
   setTimeout(fixChanges, 10000);
-  setInterval(async () => {
-    let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character_name`;
-    console.log("request: " + request);
-    try {
-      const response = await axios.get(request);
-      players = response["data"]["outfit_list"][0]["members"];
-      players.forEach((element) => {
-        playerCashe[element["name"]["first_lower"]] = element["rank"];
-      });
-      console.log("refreshed player cashe");
-      fixChanges();
-    } catch (error) {
-      console.log(
-        "err in requesting player data from daybreak servers: \n~~~~~~~~~~~\n" +
-          error +
-          "\n~~~~~~~~~~~"
-      );
-    }
+  setInterval(() => {
+    getPlayerCashe();
+    fixChanges();
   }, config.casheTime);
 });
 
@@ -134,19 +118,12 @@ async function fixChanges() {
     return true;
   });
   log(5, "Checking " + guildMembers.length + " guild members");
+  numMissmached = { names: 0, ranks: 0 };
   for (let i = 0; i < guildMembers.length; i++) {
-    log(
-      7,
-      "[" +
-        (i + 1) +
-        "/" +
-        guildMembers.length +
-        "] checking: " +
-        guildMembers[i]["username"]
-    );
+    log(7,"[" +(i + 1) +"/" +guildMembers.length +"] checking: " +guildMembers[i]["username"]);
     updateGuildMember(guildMembers[i]);
   }
-  log(5, "Finished checking guild members.");
+  log(5, "Finished checking guild members, there are " + numMissmached.names + " users with missmached names and " + numMissmached.ranks + " users with missmached ranks.");
 }
 
 bot.on("messageCreate", async (msg) => {
@@ -160,10 +137,13 @@ bot.on("messageCreate", async (msg) => {
     } else {
       command = args;
     }
-    switch (command) {
-      case "exempt":
-        if (msg.guildID === config.dGuild) {
-          let member = msg.channel.guild.fetchMembers({
+    if (msg.guildID === config.dGuild) {
+      var member = msg.channel.guild.fetchMembers({
+        userIDs: msg.author.id,
+      });
+      switch (command) {
+        case "exempt":
+          member = msg.channel.guild.fetchMembers({
             userIDs: msg.author.id,
           });
           member = (await member)[0];
@@ -200,69 +180,132 @@ bot.on("messageCreate", async (msg) => {
                 configHandler.updateExempt(exemptMembers);
               }
             } else {
-              bot.createMessage(
-                msg.channel.id,
-                "Usage:\n" + config.commandChar + "exempt [@user]"
-              );
+              bot.createMessage(msg.channel.id,"Usage:\n" + config.commandChar + "exempt [@user]");
             }
+          } else {
+            sendTimedMessage(msg.channel.id,"You need to be an admistrator to use this command.",10);
           }
-        }
-        break;
+          break;
+        case "remind":
+          break;
+        case "apipull":
+          member = (await member)[0];
+          if (member.permission.has("manageRoles")) {
+          log(5, "Making api pull from command.");
+          fixChanges();
+          log(5, "Finished checking guild members, there are " + numMissmached.names + " users with missmached names and " + numMissmached.ranks + " users with missmached ranks.");
+          }
+          break;
+        case "urank":
+          member = msg.channel.guild.fetchMembers({
+            userIDs: msg.author.id,
+          });
+          member = (await member)[0];
+          if (member.permission.has("manageRoles")) {
+            bot.createMessage(msg.channel.id,"There are " + numMissmached.ranks + " users with missmached roles.");
+          } else {
+            sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
+          }
+          break;
+        case "uname":
+          member = msg.channel.guild.fetchMembers({
+            userIDs: msg.author.id,
+          });
+          member = (await member)[0];
+          if (member.permission.has("manageRoles")) {
+            bot.createMessage(msg.channel.id,"There are " + numMissmached.names + " users with missmached names.");
+          } else {
+            sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
+          }
+          break;
+      }
     }
   }
 });
 
+async function sendTimedMessage(channel, msg, time) {
+  bot.createMessage(channel, msg)
+    .then((newmsg) => {
+      setTimeout(function () {
+        newmsg
+          .delete()
+          .catch((err) => console.log("delete timed message error: " + err));
+      }, time * 1000);
+    })
+    .catch((err) => console.log("send timed message error: " + err));
+}
+
 async function updateGuildMember(member) {
-  if (
-    member.roles.includes(config["member"]) &&
-    !member.roles.includes(config["exempt"])
-  ) {
-    if (!exemptMembers[member.id]) {
-      if (!member.bot) {
-        let playername = member.username;
-        if (member.nick) {
-          playername = member.nick;
-        }
-        playername = playername.toLowerCase();
-        if (playername.includes(" ")) {
-          playername = playername.substring(0, playername.indexOf(" "));
-        }
-        if (playername.includes("[")) {
-          playername = playername.substring(0, playername.indexOf("["));
-        }
-        if (playerCashe[playername]) {
-          //if player is included in the guild list
-          if (member.roles.includes(config.unmached)) {
-            //if player has the unmached role, remove it
-            member.removeRole(config.unmached);
-            log(4, "removed umached IGN role from " + playername);
+  if (member.roles.includes(config["member"])) {
+    if (!member.roles.includes(config["exempt"])) {
+      if (!exemptMembers[member.id]) {
+        if (!member.bot) {
+          let playername = member.username;
+          if (member.nick) {
+            playername = member.nick;
           }
-          if (config.matchRanks) {
-            if (!member.roles.includes(config.update)) {
+          playername = playername.toLowerCase();
+          if (playername.includes(" ")) {
+            playername = playername.substring(0, playername.indexOf(" "));
+          }
+          if (playername.includes("[")) {
+            playername = playername.substring(0, playername.indexOf("["));
+          }
+
+          if(playerCashe[playername]){ //if member exists in playerCashe
+            if(member.roles.includes(config.unmached)){ //if member has bad ign role remove it
+              member.removeRole(config.unmached);
+              log(4, "removed umached IGN role from " + playername);
+            }
+            if(config.matchRanks){ //if match ranks is enabled
               if (
-                !member.roles.includes(config["ranks"][playerCashe[playername]])
+                member.roles.includes(config["ranks"][playerCashe[playername]])
               ) {
-                member.addRole(config.update);
-                log(4, "added umached IGN role from " + playername);
+                //if member has correct rank role
+                if (member.roles.includes(config.update)) {
+                  //if member has update role remove it
+                  member.removeRole(config.update);
+                  log(4, "removed update rank role from " + playername);
+                }
+              } else {
+                if (config["ranks"][playerCashe[playername]]) {
+                  numMissmached.ranks++;
+                  if (!member.roles.includes(config.update)) {
+                    //if member does not have update rank role add it
+                    member.addRole(config.update);
+                    log(4, "added update role to " + playername);
+                  }
+                } else {
+                  if (member.roles.includes(config.update)) {
+                    //if member does have update rank role remove it
+                    member.removeRole(config.update);
+                    log(4, "removed update rank role from " + playername);
+                  }
+                }
               }
-            } else if (
-              member.roles.includes(config["ranks"][playerCashe[playername]])
-            ) {
+            }
+          } else { //if member does not exist in member cashe
+            numMissmached.names++
+            if (member.roles.includes(config.update)) { //if member has update role remove it
               member.removeRole(config.update);
               log(4, "removed update rank role from " + playername);
             }
-          }
-        } else {
-          if (member.roles.includes(config.update)) {
-            member.removeRole(config.update);
-            log(4, "removed update rank role from " + playername);
-          }
-          if (!member.roles.includes(config.unmached)) {
-            member.addRole(config.unmached);
-            log(4, "added umached IGN role to " + playername);
+            if (!member.roles.includes(config.unmached)) { //if member does not have bad ign role add it
+              member.addRole(config.unmached);
+              log(4, "added umached IGN role to " + playername);
+            }
           }
         }
       }
+    }
+  } else { //if member does not have member role
+    if (member.roles.includes(config.update)) {
+      member.removeRole(config.update);
+      log(4, "removed update rank role from " + playername);
+    }
+    if (member.roles.includes(config.unmached)) {
+      member.remove(config.unmached);
+      log(4, "removed umached IGN role from " + playername);
     }
   }
 }
