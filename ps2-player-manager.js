@@ -1,16 +1,59 @@
 let configHandler = require("./lily-modules/config-handler.js");
-var playerCashe = {};
+const nodeModuleHandler = require ("./lily-modules/node-modules-handler")
 var numMissmached = { names: 0, ranks: 0 };
 
 var exemptMembers = configHandler.fetchExempt();
-const config = configHandler.fetchConfig();
+var config = configHandler.fetchConfig();
 const tokens = configHandler.fetchTokens();
-if (!config.casheTime) {
-  config.casheTime = 600000;
+if (!config.cacheTime) {
+  config.cacheTime = 600000;
 }
 
-const Eris = require("eris");
-const axios = require("axios").default;
+const Eris = nodeModuleHandler.get("eris");
+const axios = nodeModuleHandler.get("axios");
+const postGres = nodeModuleHandler.get("pg");
+var dbCache = {}
+var db
+
+startup();
+function startup() {
+  console.log("Connecting to database...");
+  if(tokens.pgSql.url != ""){
+    db = new postGres.Client(tokens.pgSql.url)
+  } else {
+    db = new postGres.Client({
+      host: tokens.pgSql.host,
+      port: tokens.pgSql.port,
+      user: tokens.pgSql.user,
+      password: tokens.pgSql.password,
+      database: tokens.pgSql.database
+    })
+  }
+  db.connect()
+    .then(() => {
+      console.log("Connected to pg server.");
+      db.query("SELECT * FROM users")
+        .then((res) => {
+          console.log("Connected to database.")
+          for (let i = 0; i < res.rows.length; i++) {
+            dbCache[res.rows[i]["psname"]] = res.rows[i];
+          }
+          bot.connect();
+        })
+        .catch((e) => {
+          console.log(
+            "Unable to query database: " + tokens.pgSql.database + " table: " +
+              tokens.pgSql.userTable +
+              " \nPlease ensure this database exists, has a table named users and that the provided user credentials have read/write access to it."
+          );
+          process.exit();
+        });
+    })
+    .catch((e) => {
+      console.log("Unable to connect to database.");
+      process.exit();
+    });
+}
 
 var bot = new Eris(tokens.discord);
 
@@ -20,17 +63,24 @@ async function log(level, msg) {
   }
 }
 
-async function getPlayerCashe() {
-  let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character_name`;
-  console.log("request: " + request);
+async function fetchPsApi() {
+  let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character`;
+  log(7,"request: " + request);
   try {
     const response = await axios.get(request);
     let players = response["data"]["outfit_list"][0]["members"];
 
     for (let i = 0; i < players.length; i++) {
-      playerCashe[players[i]["name"]["first_lower"]] = players[i]["rank"];
+      if(!dbCache[players[i]["name"]["first_lower"]]){
+        db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1])
+        db.Cache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
+      } else if(dbCache[players[i]["name"]["first_lower"]]["rank"] != players[i]["rank"]){
+        db.query("UPDATE users SET rank = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
+        db.Cache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
+        console.log("Updated " + players[i]["name"]["first_lower"] + "'s rank to " + players[i]["rank"])
+      }
     }
-    console.log("fetched player cashe");
+    log(5,"fetched player cache");
   } catch (error) {
     console.log(
       "err in requesting player data from daybreak servers: \n~~~~~~~~~~~\n" +
@@ -39,8 +89,6 @@ async function getPlayerCashe() {
     );
   }
 }
-
-bot.connect();
 
 bot.on("guildMemberUpdate", async function (guild, member) {
   updateGuildMember(member);
@@ -52,13 +100,20 @@ bot.on("ready", () => {
       return true;
     }
   });
-
   if (
     config["reminder"] &&
     config["reminderTime"] &&
     config["reminderChannel"] &&
     typeof config["reminder"] != "off"
   ) {
+    config["reminder"] = config["reminder"].replace(
+      "%role%",
+      guild.roles.find((r) => {
+        if (r.id === config.unmached) {
+          return true;
+        }
+      }).mention
+    );
     let currentDate = new Date();
     let hours = currentDate.getHours() * 3600000;
     let minutes = currentDate.getMinutes() * 60000;
@@ -99,16 +154,13 @@ bot.on("ready", () => {
   }
 
   guild.fetchAllMembers();
-  console.log("Ready!");
-  getPlayerCashe();
-  setTimeout(fixChanges, 10000);
-  setInterval(() => {
-    getPlayerCashe();
-    fixChanges();
-  }, config.casheTime);
+  console.log("Connected to discord.");
+  fixChanges()
+  setInterval(fixChanges, config.cacheTime);
 });
 
 async function fixChanges() {
+  await fetchPsApi();
   let guild = bot.guilds.find((g) => {
     if (g.id === config.dGuild) {
       return true;
@@ -187,6 +239,10 @@ bot.on("messageCreate", async (msg) => {
           }
           break;
         case "remind":
+
+          bot.createMessage(msg.channel.id, config["reminder"]);
+          log(4,"User: " + msg.author.username + " ran reminder.")
+          msg.delete();
           break;
         case "apipull":
           member = (await member)[0];
@@ -252,14 +308,14 @@ async function updateGuildMember(member) {
             playername = playername.substring(0, playername.indexOf("["));
           }
 
-          if(playerCashe[playername]){ //if member exists in playerCashe
+          if(dbCache[playername]){ //if member exists in dbCache
             if(member.roles.includes(config.unmached)){ //if member has bad ign role remove it
               member.removeRole(config.unmached);
               log(4, "removed umached IGN role from " + playername);
             }
             if(config.matchRanks){ //if match ranks is enabled
               if (
-                member.roles.includes(config["ranks"][playerCashe[playername]])
+                member.roles.includes(config["ranks"][dbCache[playername]["rank"]])
               ) {
                 //if member has correct rank role
                 if (member.roles.includes(config.update)) {
@@ -268,7 +324,7 @@ async function updateGuildMember(member) {
                   log(4, "removed update rank role from " + playername);
                 }
               } else {
-                if (config["ranks"][playerCashe[playername]]) {
+                if (config["ranks"][dbCache[playername]["rank"]]) {
                   numMissmached.ranks++;
                   if (!member.roles.includes(config.update)) {
                     //if member does not have update rank role add it
@@ -284,7 +340,7 @@ async function updateGuildMember(member) {
                 }
               }
             }
-          } else { //if member does not exist in member cashe
+          } else { //if member does not exist in member cache
             numMissmached.names++
             if (member.roles.includes(config.update)) { //if member has update role remove it
               member.removeRole(config.update);

@@ -1,13 +1,20 @@
 const fs = require("fs");
 
 const defaultTokens = {
-  configVersion: 1,
+  configVersion: 3,
   discord: "place your discord bot token here.",
+  pgSql: {
+    host: "localhost",
+    port: 3211,
+    user: "username",
+    password: "password",
+    database: "ps2-player-manager",
+  },
   api: "example",
 };
 
 const defaultConfig = {
-  configVersion: 3,
+  configVersion: 5,
   psGuild: "",
   world: 1,
   dGuild: "",
@@ -15,6 +22,7 @@ const defaultConfig = {
   member: "",
   exempt: "",
   unmached: "",
+  inactive: "",
   matchRanks: false,
   reminder:
     "Hey! %role% \nMake your ign match your ingame username! \nThe bot only before the first space in your username so you may include tags after that.",
@@ -93,7 +101,31 @@ function fetchTokens() {
     console.log("tokens file found");
     let tokens = fs.readFileSync(path, "utf8");
     try {
-      return JSON.parse(tokens);
+      tokens = JSON.parse(tokens);
+      if (!tokens.configVersion) {
+        console.log(
+          "I cant determine what config version you have. Please fix or regenerate your config."
+        );
+        process.exit();
+      } else if (tokens.configVersion < defaultTokens.configVersion) {
+        console.log("Updating config");
+        updateConfig(defaultTokens, tokens, path);
+        process.exit();
+      }
+      if (
+        !(
+          (tokens.pgSql.user &&
+            tokens.pgSql.host &&
+            tokens.pgSql.database &&
+            tokens.pgSql.password &&
+            tokens.pgSql.port) ||
+          (tokens.pgSql.url && tokens.pgSql.url != "")
+        )
+      ) {
+        console.log("Invalid database info in tokens.json");
+        process.exit();
+      }
+      return tokens;
     } catch (err) {
       console.log(
         "***************************************\n***** invalid json in tokens file *****\n***************************************"
