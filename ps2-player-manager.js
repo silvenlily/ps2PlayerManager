@@ -43,9 +43,17 @@ function startup() {
           
           for (let i = 0; i < Object.keys(reqCol).length; i++) {
             if(i === 0){
-              qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
+              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" ){
+                qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]] + " UNIQUE";
+              } else {
+                qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
+              }
             } else {
-              qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]]
+              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" ){
+                qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]]
+              } else {
+                qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
+              }
             }
           }
 
@@ -98,6 +106,8 @@ async function fetchPsApi() {
   log(7,"request: " + request);
   //try {
     const response = await axios.get(request);
+    let inactiveDate =  new Date();
+    inactiveDate.setDate(inactiveDate.getDate() - config.inactiveTime);
     let players = response["data"]["outfit_list"][0]["members"];
 
     for (let i = 0; i < players.length; i++) {
@@ -108,6 +118,18 @@ async function fetchPsApi() {
         db.query("UPDATE users SET rank = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
         dbCache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
         console.log("Updated " + players[i]["name"]["first_lower"] + "'s rank to " + players[i]["rank"])
+      }
+      let lastlogin = new Date(players[i]["times"]["last_login_date"] + " UTC")
+      if(lastlogin < inactiveDate){
+        if(dbCache[players[i]["name"]["first_lower"]]["status"] === 1){
+          dbCache[players[i]["name"]["first_lower"]]["status"] = 2
+          db.query("UPDATE users SET status = $1 WHERE psname = $2",[2,players[i]["name"]["first_lower"]])
+        }
+      } else {
+        if(dbCache[players[i]["name"]["first_lower"]]["status"] === 2){
+          dbCache[players[i]["name"]["first_lower"]]["status"] = 1
+          db.query("UPDATE users SET status = $1 WHERE psname = $2",[1,players[i]["name"]["first_lower"]])
+        }
       }
     }
     log(5,"fetched player cache");
@@ -322,7 +344,7 @@ async function sendTimedMessage(channel, msg, time) {
 }
 
 async function updateGuildMember(member) {
-  if (member.roles.includes(config["member"])) {
+  if (member.roles.includes(config["member"]) || member.roles.includes(config.inactive)) {
     if (!member.roles.includes(config["exempt"])) {
       if (!exemptMembers[member.id]) {
         if (!member.bot) {
@@ -343,33 +365,54 @@ async function updateGuildMember(member) {
               member.removeRole(config.unmached);
               log(4, "removed umached IGN role from " + playername);
             }
-            if(config.matchRanks){ //if match ranks is enabled
-              if (
-                member.roles.includes(config["ranks"][dbCache[playername]["rank"]])
-              ) {
-                //if member has correct rank role
-                if (member.roles.includes(config.update)) {
-                  //if member has update role remove it
-                  member.removeRole(config.update);
-                  log(4, "removed update rank role from " + playername);
+
+            if (dbCache[playername]["status"] === 2) {
+              //if member status is inactive (2)
+              if(!member.roles.includes(config.member)){
+                //if member does not have inactive role add it
+                member.addRole(config.inactive);
+              }
+              if(member.roles.includes(config.member)){
+                //if member has member role remove it
+                member.removeRole(config.member);
+              }
+            } else {
+              if (dbCache[playername]["status"] === 1) {
+                //if member status is active (1)
+                if (!member.roles.includes(config.member)) {
+                  //if member does not have member role add it
+                  member.addRole(config.member);
                 }
-              } else {
-                if (config["ranks"][dbCache[playername]["rank"]]) {
+                if (member.roles.includes(config.inactive)) {
+                  //if member has inactive role remove it
+                  member.removeRole(config.inactive);
+                }
+              }
+
+              if (config.matchRanks) {
+                //if match ranks is enabled
+                if (
+                  member.roles.includes(
+                    config["ranks"][dbCache[playername]["rank"]]
+                  )
+                ) {
+                  //if member has correct rank role
+                  if (member.roles.includes(config.update)) {
+                    //if member has update role remove it
+                    member.removeRole(config.update);
+                    log(4, "removed update rank role from " + playername);
+                  }
+                } else {
                   numMissmached.ranks++;
                   if (!member.roles.includes(config.update)) {
                     //if member does not have update rank role add it
                     member.addRole(config.update);
                     log(4, "added update role to " + playername);
                   }
-                } else {
-                  if (member.roles.includes(config.update)) {
-                    //if member does have update rank role remove it
-                    member.removeRole(config.update);
-                    log(4, "removed update rank role from " + playername);
-                  }
                 }
               }
             }
+
           } else { //if member does not exist in member cache
             numMissmached.names++
             if (member.roles.includes(config.update)) { //if member has update role remove it

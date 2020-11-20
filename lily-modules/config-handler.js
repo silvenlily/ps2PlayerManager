@@ -14,7 +14,7 @@ const defaultTokens = {
 };
 
 const defaultConfig = {
-  configVersion: 5,
+  configVersion: 6,
   psGuild: "",
   world: 1,
   dGuild: "",
@@ -23,6 +23,7 @@ const defaultConfig = {
   exempt: "",
   unmached: "",
   inactive: "",
+  inactiveTime: 28,
   matchRanks: false,
   reminder:
     "Hey! %role% \nMake your ign match your ingame username! \nThe bot only before the first space in your username so you may include tags after that.",
@@ -55,7 +56,7 @@ function updateConfig(def, current, path) {
     );
   }
   console.log(
-    "Updated to new config version, please apply new required values if nessasary."
+    "Updated to new config version, please apply new values if nessasary."
   );
 }
 
