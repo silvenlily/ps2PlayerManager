@@ -64,9 +64,11 @@ function startup() {
               dbCache[res.rows[i]["psname"]] = res.rows[i];
             }
             console.log("Inserting columns into table")
-            db.query(qry)
+            db.query(qry).then(()=>{
+              bot.connect();
+            })
           })
-          .catch((e) => {
+          .catch((e) => { 
             console.log("Unable to find table: 'users' creating new table")
             db.query("CREATE TABLE users ()").then(()=>{
               console.log("Inserting columns into table")
@@ -80,10 +82,36 @@ function startup() {
 
 
 
+        } else {
+          bot.connect();
+
+          db.query("SELECT * FROM users")
+          .then((res) => {
+            console.log("Connected to database.")
+            for (let i = 0; i < res.rows.length; i++) {
+              dbCache[res.rows[i]["psname"]] = res.rows[i];
+            }
+            bot.connect();
+          })
+          .catch((e) => { 
+            console.log("Somthing went wrong when connecting to postgres database: " + e)
+            process.exit();
+          });
         }
-        bot.connect();
       }).catch((e)=>{
         console.log("Unable to query databases: information_schema.columns table, proceding assuming correct columns exist. This will likely cause bugs or a crash.");
+        db.query("SELECT * FROM users")
+        .then((res) => {
+          console.log("Connected to database.")
+          for (let i = 0; i < res.rows.length; i++) {
+            dbCache[res.rows[i]["psname"]] = res.rows[i];
+          }
+          bot.connect();
+        })
+        .catch((e) => { 
+          console.log("Somthing went wrong when connecting to postgres database: " + e)
+          process.exit();
+        });
       })
 
     })
@@ -104,16 +132,20 @@ async function log(level, msg) {
 async function fetchPsApi() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character`;
   log(7,"request: " + request);
-  //try {
+  try {
     const response = await axios.get(request);
     let inactiveDate =  new Date();
     inactiveDate.setDate(inactiveDate.getDate() - config.inactiveTime);
     let players = response["data"]["outfit_list"][0]["members"];
-
+    console.log("members: " + players.length)
     for (let i = 0; i < players.length; i++) {
-      if(!dbCache[players[i]["name"]["first_lower"]]){
-        db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1])
+      if(typeof dbCache[players[i]["name"]["first_lower"]] === "undefined"){
+        db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch(()=>
+        {
+          console.log("err:\n pname: " + players[i]["name"]["first_lower"] + " cache: " + dbCache[players[i]["name"]["first_lower"]])
+        })
         dbCache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
+
       } else if(dbCache[players[i]["name"]["first_lower"]]["rank"] != players[i]["rank"]){
         db.query("UPDATE users SET rank = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
         dbCache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
@@ -132,14 +164,14 @@ async function fetchPsApi() {
         }
       }
     }
-    log(5,"fetched player cache");
-  /*} catch (error) {
+    log(5,"fetched api");
+  } catch (error) {
     console.log(
-      "err in requesting player data from daybreak servers: \n~~~~~~~~~~~\n" +
+      "err in requesting player data from daybreak servers or updating database: \n~~~~~~~~~~~\n" +
         error +
         "\n~~~~~~~~~~~"
     );
-  }*/
+  }
 }
 
 bot.on("guildMemberUpdate", async function (guild, member) {
@@ -344,7 +376,7 @@ async function sendTimedMessage(channel, msg, time) {
 }
 
 async function updateGuildMember(member) {
-  if (member.roles.includes(config["member"]) || member.roles.includes(config.inactive)) {
+  if (member.roles.includes(config["member"]) || member.roles.includes(config["inactive"])) {
     if (!member.roles.includes(config["exempt"])) {
       if (!exemptMembers[member.id]) {
         if (!member.bot) {
@@ -368,7 +400,7 @@ async function updateGuildMember(member) {
 
             if (dbCache[playername]["status"] === 2) {
               //if member status is inactive (2)
-              if(!member.roles.includes(config.member)){
+              if(!member.roles.includes(config.inactive)){
                 //if member does not have inactive role add it
                 member.addRole(config.inactive);
               }
