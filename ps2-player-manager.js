@@ -32,27 +32,57 @@ function startup() {
   db.connect()
     .then(() => {
       console.log("Connected to pg server.");
-      db.query("SELECT * FROM users")
-        .then((res) => {
-          console.log("Connected to database.")
-          for (let i = 0; i < res.rows.length; i++) {
-            dbCache[res.rows[i]["psname"]] = res.rows[i];
+      db.query("select * from information_schema.columns where table_name='users'").then((res)=>{
+        let reqCol = {psname: "VARCHAR(32)", psid: "VARCHAR(19)",rank: "VARCHAR(32)",status: "SMALLINT"}
+        let qry = "ALTER TABLE users ";
+        for (let i = 0; i < res.rows.length; i++) {
+          delete reqCol[res["rows"][i]["column_name"]]
+        }
+
+        if(Object.keys(reqCol).length > 0){
+          
+          for (let i = 0; i < Object.keys(reqCol).length; i++) {
+            if(i === 0){
+              qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
+            } else {
+              qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]]
+            }
           }
-          bot.connect();
-        })
-        .catch((e) => {
-          console.log(
-            "Unable to query database: " + tokens.pgSql.database + " table: " +
-              tokens.pgSql.userTable +
-              " \nPlease ensure this database exists, has a table named users and that the provided user credentials have read/write access to it."
-          );
-          process.exit();
-        });
+
+          db.query("SELECT * FROM users")
+          .then((res) => {
+            console.log("Connected to database.")
+            for (let i = 0; i < res.rows.length; i++) {
+              dbCache[res.rows[i]["psname"]] = res.rows[i];
+            }
+            console.log("Inserting columns into table")
+            db.query(qry)
+          })
+          .catch((e) => {
+            console.log("Unable to find table: 'users' creating new table")
+            db.query("CREATE TABLE users ()").then(()=>{
+              console.log("Inserting columns into table")
+              db.query(qry)
+            }).catch(()=>{
+              console.log("Unable to create table. Please create table 'users' then restart.")
+              process.exit()
+            })
+          });
+
+
+
+
+        }
+        bot.connect();
+      }).catch((e)=>{
+        console.log("Unable to query databases: information_schema.columns table, proceding assuming correct columns exist. This will likely cause bugs or a crash.");
+      })
+
     })
-    .catch((e) => {
+    /*.catch((e) => {
       console.log("Unable to connect to database.");
       process.exit();
-    });
+    });*/
 }
 
 var bot = new Eris(tokens.discord);
@@ -66,28 +96,28 @@ async function log(level, msg) {
 async function fetchPsApi() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character`;
   log(7,"request: " + request);
-  try {
+  //try {
     const response = await axios.get(request);
     let players = response["data"]["outfit_list"][0]["members"];
 
     for (let i = 0; i < players.length; i++) {
       if(!dbCache[players[i]["name"]["first_lower"]]){
         db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1])
-        db.Cache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
+        dbCache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
       } else if(dbCache[players[i]["name"]["first_lower"]]["rank"] != players[i]["rank"]){
         db.query("UPDATE users SET rank = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
-        db.Cache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
+        dbCache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
         console.log("Updated " + players[i]["name"]["first_lower"] + "'s rank to " + players[i]["rank"])
       }
     }
     log(5,"fetched player cache");
-  } catch (error) {
+  /*} catch (error) {
     console.log(
       "err in requesting player data from daybreak servers: \n~~~~~~~~~~~\n" +
         error +
         "\n~~~~~~~~~~~"
     );
-  }
+  }*/
 }
 
 bot.on("guildMemberUpdate", async function (guild, member) {
