@@ -134,7 +134,7 @@ async function log(level, msg) {
 async function fetchPsApi() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character`;
   log(7,"request: " + request);
-  //try {
+  try {
     const response = await axios.get(request);
     let inactiveDate =  new Date();
     inactiveDate.setDate(inactiveDate.getDate() - config.inactiveTime);
@@ -161,13 +161,7 @@ async function fetchPsApi() {
       let lastlogin = new Date(players[i]["times"]["last_login_date"] + " UTC")
       if(lastlogin < inactiveDate){
         if(dbCache[players[i]["name"]["first_lower"]]["status"] === 1){
-          let guildMember = await guild.members.find(async (m) => {
-            if(m.id === dbCache[players[i]["name"]["first_lower"]]["discordid"]){
-              return true;
-            } else {
-              return false;
-            }
-          });
+          dbCache[players[i]["name"]["first_lower"]]["inactiveranks"] = players[i]["rank"]
           dbCache[players[i]["name"]["first_lower"]]["status"] = 2
           db.query("UPDATE users SET inactiveranks = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
           db.query("UPDATE users SET status = $1 WHERE psname = $2",[2,players[i]["name"]["first_lower"]])
@@ -180,13 +174,13 @@ async function fetchPsApi() {
       }
     }
     log(5,"fetched api");
-  /*} catch (error) {
+  } catch (error) {
     console.log(
       "err in requesting player data from daybreak servers or updating database: \n~~~~~~~~~~~\n" +
         error +
         "\n~~~~~~~~~~~"
     );
-  }*/
+  }
 }
 
 bot.on("guildMemberUpdate", async function (guild, member) {
