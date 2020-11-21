@@ -72,7 +72,9 @@ function startup() {
             console.log("Unable to find table: 'users' creating new table")
             db.query("CREATE TABLE users ()").then(()=>{
               console.log("Inserting columns into table")
-              db.query(qry)
+              db.query(qry).then(()=>{
+                bot.connect();
+              })
             }).catch(()=>{
               console.log("Unable to create table. Please create table 'users' then restart.")
               process.exit()
@@ -476,7 +478,7 @@ async function updateGuildMember(member) {
       log(4, "removed update rank role from " + playername);
     }
     if (member.roles.includes(config.unmached)) {
-      member.remove(config.unmached);
+      member.removeRole(config.unmached);
       log(4, "removed umached IGN role from " + playername);
     }
   }

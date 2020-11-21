@@ -1,6 +1,6 @@
 {
   "name": "ps2-member-sync",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "a bot for aiding in the syncing of member roles between discord & planetside 2",
   "main": "main.js",
   "author": "silverlily",
