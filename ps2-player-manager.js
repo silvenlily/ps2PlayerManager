@@ -397,53 +397,64 @@ async function updateGuildMember(member) {
               member.removeRole(config.unmached);
               log(4, "removed umached IGN role from " + playername);
             }
+            if (!member.roles.includes(config.onLeave)) {
+              if (dbCache[playername]["status"] === 2) {
+                //if member status is inactive (2)
+                if (!member.roles.includes(config.inactive)) {
+                  //if member does not have inactive role add it
+                  member.addRole(config.inactive);
+                }
+                if (member.roles.includes(config.member)) {
+                  //if member has member role remove it
+                  member.removeRole(config.member);
+                }
+              } else {
+                if (dbCache[playername]["status"] === 1) {
+                  //if member status is active (1)
+                  if (!member.roles.includes(config.member)) {
+                    //if member does not have member role add it
+                    member.addRole(config.member);
+                  }
+                  if (member.roles.includes(config.inactive)) {
+                    //if member has inactive role remove it
+                    member.removeRole(config.inactive);
+                  }
+                }
 
-            if (dbCache[playername]["status"] === 2) {
-              //if member status is inactive (2)
-              if(!member.roles.includes(config.inactive)){
-                //if member does not have inactive role add it
-                member.addRole(config.inactive);
-              }
-              if(member.roles.includes(config.member)){
-                //if member has member role remove it
-                member.removeRole(config.member);
+                if (config.matchRanks) {
+                  //if match ranks is enabled
+                  if (
+                    member.roles.includes(
+                      config["ranks"][dbCache[playername]["rank"]]
+                    )
+                  ) {
+                    //if member has correct rank role
+                    if (member.roles.includes(config.update)) {
+                      //if member has update role remove it
+                      member.removeRole(config.update);
+                      log(4, "removed update rank role from " + playername);
+                    }
+                  } else {
+                    numMissmached.ranks++;
+                    if (!member.roles.includes(config.update)) {
+                      //if member does not have update rank role add it
+                      member.addRole(config.update);
+                      log(4, "added update role to " + playername);
+                    }
+                  }
+                }
               }
             } else {
-              if (dbCache[playername]["status"] === 1) {
-                //if member status is active (1)
-                if (!member.roles.includes(config.member)) {
-                  //if member does not have member role add it
-                  member.addRole(config.member);
-                }
-                if (member.roles.includes(config.inactive)) {
-                  //if member has inactive role remove it
-                  member.removeRole(config.inactive);
-                }
+              if (!member.roles.includes(config.member)) {
+                //if member does not have member role add it
+                member.addRole(config.member);
               }
-
-              if (config.matchRanks) {
-                //if match ranks is enabled
-                if (
-                  member.roles.includes(
-                    config["ranks"][dbCache[playername]["rank"]]
-                  )
-                ) {
-                  //if member has correct rank role
-                  if (member.roles.includes(config.update)) {
-                    //if member has update role remove it
-                    member.removeRole(config.update);
-                    log(4, "removed update rank role from " + playername);
-                  }
-                } else {
-                  numMissmached.ranks++;
-                  if (!member.roles.includes(config.update)) {
-                    //if member does not have update rank role add it
-                    member.addRole(config.update);
-                    log(4, "added update role to " + playername);
-                  }
-                }
+              if (member.roles.includes(config.inactive)) {
+                //if member has inactive role remove it
+                member.removeRole(config.inactive);
               }
             }
+
 
           } else { //if member does not exist in member cache
             numMissmached.names++

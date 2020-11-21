@@ -14,7 +14,7 @@ const defaultTokens = {
 };
 
 const defaultConfig = {
-  configVersion: 6,
+  configVersion: 7,
   psGuild: "",
   world: 1,
   dGuild: "",
@@ -25,6 +25,7 @@ const defaultConfig = {
   inactive: "",
   inactiveTime: 28,
   matchRanks: false,
+  onLeave: "",
   reminder:
     "Hey! %role% \nMake your ign match your ingame username! \nThe bot only before the first space in your username so you may include tags after that.",
   reminderTime: "off",
