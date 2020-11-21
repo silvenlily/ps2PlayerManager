@@ -18,7 +18,7 @@ var db
 startup();
 function startup() {
   console.log("Connecting to database...");
-  if(tokens.pgSql.url != ""){
+  if(typeof tokens.pgSql.url != "undefined" && tokens.pgSql.url != ""){
     db = new postGres.Client(tokens.pgSql.url)
   } else {
     db = new postGres.Client({
