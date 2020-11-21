@@ -115,10 +115,10 @@ function startup() {
       })
 
     })
-    /*.catch((e) => {
+    .catch((e) => {
       console.log("Unable to connect to database.");
       process.exit();
-    });*/
+    });
 }
 
 var bot = new Eris(tokens.discord);
