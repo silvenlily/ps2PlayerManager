@@ -33,7 +33,7 @@ function startup() {
     .then(() => {
       console.log("Connected to pg server.");
       db.query("select * from information_schema.columns where table_name='users'").then((res)=>{
-        let reqCol = {psname: "VARCHAR(32)", psid: "VARCHAR(19)",rank: "VARCHAR(32)",status: "SMALLINT"}
+        let reqCol = {psname: "VARCHAR(32)", psid: "VARCHAR(19)",discordid: "VARCHAR(20)",rank: "VARCHAR(32)",status: "SMALLINT",inactiveranks: "VARCHAR(32)"}
         let qry = "ALTER TABLE users ";
         for (let i = 0; i < res.rows.length; i++) {
           delete reqCol[res["rows"][i]["column_name"]]
@@ -43,14 +43,14 @@ function startup() {
           
           for (let i = 0; i < Object.keys(reqCol).length; i++) {
             if(i === 0){
-              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" ){
+              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" || Object.keys(reqCol)[i] === "discordid" ){
                 qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]] + " UNIQUE";
               } else {
                 qry = qry + "ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
               }
             } else {
-              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" ){
-                qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]]
+              if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" || Object.keys(reqCol)[i] === "discordid" ){
+                qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]] + " UNIQUE";
               } else {
                 qry = qry + ", ADD COLUMN " + Object.keys(reqCol)[i] + " " + reqCol[Object.keys(reqCol)[i]];
               }
@@ -134,12 +134,17 @@ async function log(level, msg) {
 async function fetchPsApi() {
   let request = `https://census.daybreakgames.com/s:${tokens.api}/get/ps2:v2/outfit/?outfit_id=${config.psGuild}&c:resolve=member_character`;
   log(7,"request: " + request);
-  try {
+  //try {
     const response = await axios.get(request);
     let inactiveDate =  new Date();
     inactiveDate.setDate(inactiveDate.getDate() - config.inactiveTime);
     let players = response["data"]["outfit_list"][0]["members"];
     console.log("members: " + players.length)
+    let guild = bot.guilds.find((g) => {
+      if (g.id === config.dGuild) {
+        return true;
+      }
+    });
     for (let i = 0; i < players.length; i++) {
       if(typeof dbCache[players[i]["name"]["first_lower"]] === "undefined"){
         db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch(()=>
@@ -156,7 +161,15 @@ async function fetchPsApi() {
       let lastlogin = new Date(players[i]["times"]["last_login_date"] + " UTC")
       if(lastlogin < inactiveDate){
         if(dbCache[players[i]["name"]["first_lower"]]["status"] === 1){
+          let guildMember = await guild.members.find(async (m) => {
+            if(m.id === dbCache[players[i]["name"]["first_lower"]]["discordid"]){
+              return true;
+            } else {
+              return false;
+            }
+          });
           dbCache[players[i]["name"]["first_lower"]]["status"] = 2
+          db.query("UPDATE users SET inactiveranks = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
           db.query("UPDATE users SET status = $1 WHERE psname = $2",[2,players[i]["name"]["first_lower"]])
         }
       } else {
@@ -167,13 +180,13 @@ async function fetchPsApi() {
       }
     }
     log(5,"fetched api");
-  } catch (error) {
+  /*} catch (error) {
     console.log(
       "err in requesting player data from daybreak servers or updating database: \n~~~~~~~~~~~\n" +
         error +
         "\n~~~~~~~~~~~"
     );
-  }
+  }*/
 }
 
 bot.on("guildMemberUpdate", async function (guild, member) {
@@ -395,6 +408,11 @@ async function updateGuildMember(member) {
           }
 
           if(dbCache[playername]){ //if member exists in dbCache
+            if(typeof dbCache[playername]["discordid"] != "string"){
+              console.log("added discord id to db")
+              dbCache[playername]["discordid"] = member.id
+              db.query("UPDATE users SET discordid = $1 WHERE psname = $2",[member.id,playername])
+            }
             if(member.roles.includes(config.unmached)){ //if member has bad ign role remove it
               member.removeRole(config.unmached);
               log(4, "removed umached IGN role from " + playername);
