@@ -475,11 +475,11 @@ async function updateGuildMember(member) {
   } else { //if member does not have member role
     if (member.roles.includes(config.update)) {
       member.removeRole(config.update);
-      log(4, "removed update rank role from " + playername);
+      log(4, "removed update rank role from " + member.username);
     }
     if (member.roles.includes(config.unmached)) {
       member.removeRole(config.unmached);
-      log(4, "removed umached IGN role from " + playername);
+      log(4, "removed umached IGN role from " + member.username);
     }
   }
 }
