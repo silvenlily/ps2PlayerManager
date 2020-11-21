@@ -321,15 +321,16 @@ bot.on("messageCreate", async (msg) => {
                 }
               }
               if (reply != "") {
-                bot.createMessage(msg.channel.id, reply);
+                sendTimedMessage(msg.channel.id, reply),20;
                 configHandler.updateExempt(exemptMembers);
               }
             } else {
-              bot.createMessage(msg.channel.id,"Usage:\n" + config.commandChar + "exempt [@user]");
+              sendTimedMessage(msg.channel.id,"Usage:\n" + config.commandChar + "exempt [@user]",10);
             }
           } else {
             sendTimedMessage(msg.channel.id,"You need to be an admistrator to use this command.",10);
           }
+          msg.delete();
           break;
         case "remind":
 
@@ -344,6 +345,7 @@ bot.on("messageCreate", async (msg) => {
           fixChanges();
           log(5, "Finished checking guild members, there are " + numMissmached.names + " users with missmached names and " + numMissmached.ranks + " users with missmached ranks.");
           }
+          msg.delete();
           break;
         case "urank":
           member = msg.channel.guild.fetchMembers({
@@ -355,6 +357,7 @@ bot.on("messageCreate", async (msg) => {
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
+          msg.delete();
           break;
         case "uname":
           member = msg.channel.guild.fetchMembers({
@@ -366,6 +369,7 @@ bot.on("messageCreate", async (msg) => {
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
+          msg.delete();
           break;
       }
     }
