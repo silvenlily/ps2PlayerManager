@@ -321,7 +321,7 @@ bot.on("messageCreate", async (msg) => {
                 }
               }
               if (reply != "") {
-                sendTimedMessage(msg.channel.id, reply),20;
+                sendTimedMessage(msg.channel.id, reply,30);
                 configHandler.updateExempt(exemptMembers);
               }
             } else {
@@ -353,7 +353,7 @@ bot.on("messageCreate", async (msg) => {
           });
           member = (await member)[0];
           if (member.permission.has("manageRoles")) {
-            bot.createMessage(msg.channel.id,"There are " + numMissmached.ranks + " users with missmached roles.");
+            sendTimedMessage(msg.channel.id,"There are " + numMissmached.ranks + " users with missmached roles.",30);
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
@@ -365,7 +365,7 @@ bot.on("messageCreate", async (msg) => {
           });
           member = (await member)[0];
           if (member.permission.has("manageRoles")) {
-            bot.createMessage(msg.channel.id,"There are " + numMissmached.names + " users with missmached names.");
+            sendTimedMessage(msg.channel.id,"There are " + numMissmached.names + " users with missmached names.",30);
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
