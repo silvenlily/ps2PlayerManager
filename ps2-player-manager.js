@@ -407,8 +407,12 @@ async function updateGuildMember(member) {
           if(dbCache[playername]){ //if member exists in dbCache
             if(typeof dbCache[playername]["discordid"] != "string"){
               console.log("added discord id to db")
-              dbCache[playername]["discordid"] = member.id
-              db.query("UPDATE users SET discordid = $1 WHERE psname = $2",[member.id,playername])
+              try {
+                db.query("UPDATE users SET discordid = $1 WHERE psname = $2",[member.id,playername])
+                dbCache[playername]["discordid"] = member.id
+              } catch (error) {
+                console.log("Unable to add discord id: "+ playername + ":" + member.id +" to database, likey caused by a username change.")
+              }
             }
             if(member.roles.includes(config.unmached)){ //if member has bad ign role remove it
               member.removeRole(config.unmached);
