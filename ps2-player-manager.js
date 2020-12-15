@@ -1,6 +1,6 @@
 let configHandler = require("./lily-modules/config-handler.js");
 const nodeModuleHandler = require ("./lily-modules/node-modules-handler")
-var numMissmached = { names: 0, ranks: 0 };
+var numMismatched = { names: 0, ranks: 0 };
 
 var exemptMembers = configHandler.fetchExempt();
 var config = configHandler.fetchConfig();
@@ -40,7 +40,6 @@ function startup() {
         }
 
         if(Object.keys(reqCol).length > 0){
-          
           for (let i = 0; i < Object.keys(reqCol).length; i++) {
             if(i === 0){
               if(Object.keys(reqCol)[i] === "psname" || Object.keys(reqCol)[i] === "psid" || Object.keys(reqCol)[i] === "discordid" ){
@@ -149,14 +148,15 @@ async function fetchPsApi() {
       if(typeof dbCache[players[i]["name"]["first_lower"]] === "undefined"){
         db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch(()=>
         {
-          console.log("err:\n pname: " + players[i]["name"]["first_lower"] + " cache: " + dbCache[players[i]["name"]["first_lower"]])
+          console.log("Unable to insert user " + players[i] + " into database. Likely duplicate ps2 accounts.")
+          return;
         })
         dbCache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
 
       } else if(dbCache[players[i]["name"]["first_lower"]]["rank"] != players[i]["rank"]){
         db.query("UPDATE users SET rank = $1 WHERE psname = $2",[players[i]["rank"],players[i]["name"]["first_lower"]])
         dbCache[players[i]["name"]["first_lower"]]["rank"] = players[i]["rank"]
-        console.log("Updated " + players[i]["name"]["first_lower"] + "'s rank to " + players[i]["rank"])
+        log(5,"Updated " + players[i]["name"]["first_lower"] + "'s rank to " + players[i]["rank"])
       }
       let lastlogin = new Date(players[i]["times"]["last_login_date"] + " UTC")
       if(lastlogin < inactiveDate){
@@ -263,12 +263,12 @@ async function fixChanges() {
     return true;
   });
   log(5, "Checking " + guildMembers.length + " guild members");
-  numMissmached = { names: 0, ranks: 0 };
+  numMismatched = { names: 0, ranks: 0 };
   for (let i = 0; i < guildMembers.length; i++) {
     log(7,"[" +(i + 1) +"/" +guildMembers.length +"] checking: " +guildMembers[i]["username"]);
     updateGuildMember(guildMembers[i]);
   }
-  log(5, "Finished checking guild members, there are " + numMissmached.names + " users with missmached names and " + numMissmached.ranks + " users with missmached ranks.");
+  log(5, "Finished checking guild members, there are " + numMismatched.names + " users with mismatched names and " + numMismatched.ranks + " users with mismatched ranks.");
 }
 
 bot.on("messageCreate", async (msg) => {
@@ -333,7 +333,6 @@ bot.on("messageCreate", async (msg) => {
           msg.delete();
           break;
         case "remind":
-
           bot.createMessage(msg.channel.id, config["reminder"]);
           log(4,"User: " + msg.author.username + " ran reminder.")
           msg.delete();
@@ -343,7 +342,7 @@ bot.on("messageCreate", async (msg) => {
           if (member.permission.has("manageRoles")) {
           log(5, "Making api pull from command.");
           fixChanges();
-          log(5, "Finished checking guild members, there are " + numMissmached.names + " users with missmached names and " + numMissmached.ranks + " users with missmached ranks.");
+          log(5, "Finished checking guild members, there are " + numMismatched.names + " users with mismatched names and " + numMismatched.ranks + " users with mismatched ranks.");
           }
           msg.delete();
           break;
@@ -353,7 +352,7 @@ bot.on("messageCreate", async (msg) => {
           });
           member = (await member)[0];
           if (member.permission.has("manageRoles")) {
-            sendTimedMessage(msg.channel.id,"There are " + numMissmached.ranks + " users with missmached roles.",30);
+            sendTimedMessage(msg.channel.id,"There are " + numMismatched.ranks + " users with mismatched roles.",30);
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
@@ -365,7 +364,7 @@ bot.on("messageCreate", async (msg) => {
           });
           member = (await member)[0];
           if (member.permission.has("manageRoles")) {
-            sendTimedMessage(msg.channel.id,"There are " + numMissmached.names + " users with missmached names.",30);
+            sendTimedMessage(msg.channel.id,"There are " + numMismatched.names + " users with mismatched names.",30);
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
           }
@@ -453,7 +452,7 @@ async function updateGuildMember(member) {
                       log(4, "removed update rank role from " + playername);
                     }
                   } else {
-                    numMissmached.ranks++;
+                    numMismatched.ranks++;
                     if (!member.roles.includes(config.update)) {
                       //if member does not have update rank role add it
                       member.addRole(config.update);
@@ -472,10 +471,8 @@ async function updateGuildMember(member) {
                 member.removeRole(config.inactive);
               }
             }
-
-
           } else { //if member does not exist in member cache
-            numMissmached.names++
+            numMismatched.names++
             if (member.roles.includes(config.update)) { //if member has update role remove it
               member.removeRole(config.update);
               log(4, "removed update rank role from " + playername);
