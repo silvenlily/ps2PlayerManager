@@ -148,7 +148,7 @@ async function fetchPsApi() {
       if(typeof dbCache[players[i]["name"]["first_lower"]] === "undefined"){
         db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch(()=>
         {
-          console.log("Unable to insert user " + players[i] + " into database. Likely duplicate ps2 accounts.")
+          console.log("Unable to insert user " + players[i]["name"]["first_lower"] + " into database. Likely duplicate ps2 accounts.")
           return;
         })
         dbCache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
