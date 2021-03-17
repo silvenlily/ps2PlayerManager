@@ -177,13 +177,15 @@ async function fetchPsApi() {
     }
     setTimeout( async () => {
       if(duplicates.length > 0){
-        console.log(`purging ${duplicates.length} duplicate db entries`)
+        log(2,`purging ${duplicates.length} duplicate db entries`)
         for (let i = 0; i < duplicates.length; i++) {
           delete dbCache[duplicates[i]["name"]["first_lower"]]
           db.query("DELETE FROM users WHERE psid = $1;",[duplicates[i]["character_id"]]).then(()=>{
-            console.log("removed id: " + duplicates[i]["character_id"])
+            log(4,"removed id: " + duplicates[i]["character_id"])
           })
         }
+      } else {
+        log(7,"Checked for duplicate DB entries")
       }
 
     }, 10000);
