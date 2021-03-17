@@ -126,7 +126,7 @@ var bot = new Eris(tokens.discord);
 
 async function log(level, msg) {
   if (config.consoleLevel >= level) {
-    console.log(msg);
+    console.log(`log(${level}): ${msg}`);
   }
 }
 
@@ -144,12 +144,14 @@ async function fetchPsApi() {
         return true;
       }
     });
+    let duplicates = []
     for (let i = 0; i < players.length; i++) {
+
       if(typeof dbCache[players[i]["name"]["first_lower"]] === "undefined"){
-        db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch(()=>
-        {
-          console.log("Unable to insert user " + players[i]["name"]["first_lower"] + " into database. Likely duplicate ps2 accounts.")
-          return;
+        console.log(`debug: adding user to db: ${players[i]["name"]["first_lower"]} id: ${players[i]["character_id"]}`)
+        db.query("SELECT * FROM users WHERE psid = $1",[players[i]["character_id"]]).then((res)=>{})
+        db.query("INSERT INTO users(psname,psid,rank,status) VALUES ($1,$2,$3,$4);",[players[i]["name"]["first_lower"],players[i]["character_id"],players[i]["rank"],1]).catch((err)=>{
+          duplicates.push(players[i])
         })
         dbCache[players[i]["name"]["first_lower"]] = {psname: players[i]["name"]["first_lower"],psid: players[i]["character_id"],rank: players[i]["rank"],status: 1}
 
@@ -173,6 +175,18 @@ async function fetchPsApi() {
         }
       }
     }
+    setTimeout( async () => {
+      if(duplicates.length > 0){
+        console.log(`purging ${duplicates.length} duplicate db entries`)
+        for (let i = 0; i < duplicates.length; i++) {
+          delete dbCache[duplicates[i]["name"]["first_lower"]]
+          db.query("DELETE FROM users WHERE psid = $1;",[duplicates[i]["character_id"]]).then(()=>{
+            console.log("removed id: " + duplicates[i]["character_id"])
+          })
+        }
+      }
+
+    }, 10000);
     log(5,"fetched api");
   } catch (error) {
     console.log(
