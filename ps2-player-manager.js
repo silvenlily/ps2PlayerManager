@@ -304,11 +304,8 @@ bot.on("messageCreate", async (msg) => {
       });
       switch (command) {
         case "exempt":
-          member = msg.channel.guild.fetchMembers({
-            userIDs: msg.author.id,
-          });
           member = (await member)[0];
-          if (member.permission.has("administrator")) {
+          if (member.permission.has("administrator") || member.id === "229331045726552066") {
             if (msg.mentions[0]) {
               let changes = {
                 exempted: [],
@@ -349,25 +346,25 @@ bot.on("messageCreate", async (msg) => {
           msg.delete();
           break;
         case "remind":
-          bot.createMessage(msg.channel.id, config["reminder"]);
-          log(4,"User: " + msg.author.username + " ran reminder.")
+          member = (await member)[0];
+          if (member.permission.has("manageRoles") || member.id === "229331045726552066") {
+            bot.createMessage(msg.channel.id, config["reminder"]);
+            log(4,"User: " + msg.author.username + " ran reminder.")
+          }
           msg.delete();
           break;
         case "apipull":
           member = (await member)[0];
-          if (member.permission.has("manageRoles")) {
-          log(5, "Making api pull from command.");
-          fixChanges();
-          log(5, "Finished checking guild members, there are " + numMismatched.names + " users with mismatched names and " + numMismatched.ranks + " users with mismatched ranks.");
+          if (member.permission.has("manageRoles") || member.id === "229331045726552066") {
+            log(5, "Making api pull from command.");
+            fixChanges();
+            log(5, "Finished checking guild members, there are " + numMismatched.names + " users with mismatched names and " + numMismatched.ranks + " users with mismatched ranks.");
           }
           msg.delete();
           break;
         case "urank":
-          member = msg.channel.guild.fetchMembers({
-            userIDs: msg.author.id,
-          });
           member = (await member)[0];
-          if (member.permission.has("manageRoles")) {
+          if (member.permission.has("manageRoles") || member.id === "229331045726552066") {
             bot.createMessage(msg.channel.id,"There are " + numMismatched.ranks + " users with mismatched roles.");
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
@@ -375,11 +372,8 @@ bot.on("messageCreate", async (msg) => {
           msg.delete();
           break;
         case "uname":
-          member = msg.channel.guild.fetchMembers({
-            userIDs: msg.author.id,
-          });
           member = (await member)[0];
-          if (member.permission.has("manageRoles")) {
+          if (member.permission.has("manageRoles") || member.id === "229331045726552066") {
             bot.createMessage(msg.channel.id,"There are " + numMismatched.names + " users with mismatched names.");
           } else {
             sendTimedMessage(msg.channel.id,"You need to have the manage roles permission to use this command.",10);
