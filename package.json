@@ -6,7 +6,7 @@
   "author": "silverlily",
   "license": "modified ISC see README.md)",
   "dependencies": {
-    "axios": "^0.28.0",
+    "axios": "^1.8.2",
     "eris": "^0.14.0",
     "pg": "^8.5.1"
   }
